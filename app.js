@@ -45,7 +45,15 @@ setInterval(updateClock, 100);
 // ========================
 //      POMODORO
 // ========================
-const POMO_DURATIONS = { work: 25 * 60, short: 5 * 60, long: 15 * 60 };
+
+// Load custom durations from localStorage or use defaults
+const POMO_DEFAULTS = { work: 25, short: 5, long: 15 };
+let pomoMinutes = JSON.parse(localStorage.getItem('pomoMinutes') || 'null') || { ...POMO_DEFAULTS };
+const POMO_DURATIONS = {
+  get work() { return pomoMinutes.work * 60; },
+  get short() { return pomoMinutes.short * 60; },
+  get long() { return pomoMinutes.long * 60; }
+};
 const CIRCUMFERENCE = 2 * Math.PI * 90; // matches SVG circle r=90
 
 let pomoMode = 'work';
@@ -74,6 +82,86 @@ function updatePomoDisplay() {
   pomoProgressEl.style.strokeDashoffset = CIRCUMFERENCE * (1 - fraction);
 }
 
+// Sync the minute display spans
+function syncPomoMinuteDisplay() {
+  document.getElementById('pomoWorkMin').textContent = pomoMinutes.work;
+  document.getElementById('pomoShortMin').textContent = pomoMinutes.short;
+  document.getElementById('pomoLongMin').textContent = pomoMinutes.long;
+}
+
+// Bell sound using Web Audio API
+function playBellSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = ctx.currentTime;
+
+    // Strike 1 — main bell hit
+    function strike(startTime) {
+      // Fundamental tone
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(830, startTime);
+      osc1.frequency.exponentialRampToValueAtTime(810, startTime + 1.5);
+      gain1.gain.setValueAtTime(0.35, startTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, startTime + 2.0);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(startTime);
+      osc1.stop(startTime + 2.0);
+
+      // Overtone 1
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.value = 1660;
+      gain2.gain.setValueAtTime(0.15, startTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, startTime + 1.2);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(startTime);
+      osc2.stop(startTime + 1.2);
+
+      // Overtone 2 (shimmer)
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.value = 2490;
+      gain3.gain.setValueAtTime(0.07, startTime);
+      gain3.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(startTime);
+      osc3.stop(startTime + 0.8);
+
+      // Impact click
+      const bufSize = ctx.sampleRate * 0.02;
+      const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuf;
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.2, startTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.05);
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = 3000;
+      bandpass.Q.value = 2;
+      noise.connect(bandpass);
+      bandpass.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(startTime);
+      noise.stop(startTime + 0.05);
+    }
+
+    // Play 3 bell strikes
+    strike(t);
+    strike(t + 0.6);
+    strike(t + 1.2);
+  } catch (_) {}
+}
+
 function startPomo() {
   if (pomoRunning) {
     clearInterval(pomoInterval);
@@ -95,19 +183,7 @@ function startPomo() {
         pomoSessionEl.textContent = pomoSessions;
         localStorage.setItem('pomoSessions', pomoSessions);
       }
-      // Play a subtle notification
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 700;
-        gain.gain.value = 0.15;
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-        osc.stop(ctx.currentTime + 0.8);
-      } catch (_) {}
+      playBellSound();
     }
   }, 1000);
 }
@@ -133,8 +209,27 @@ pomoModes.forEach(btn => {
   });
 });
 
+// Time adjustment buttons (+/-)
+document.querySelectorAll('.pomo-adj').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (pomoRunning) return; // don't allow changes while running
+    const target = btn.dataset.target; // 'work', 'short', 'long'
+    const dir = Number(btn.dataset.dir); // 1 or -1
+    pomoMinutes[target] = Math.max(1, Math.min(120, pomoMinutes[target] + dir));
+    localStorage.setItem('pomoMinutes', JSON.stringify(pomoMinutes));
+    syncPomoMinuteDisplay();
+    // If adjusting the currently active mode, update the timer
+    if (pomoMode === target) {
+      pomoTotal = POMO_DURATIONS[target];
+      pomoTime = pomoTotal;
+      updatePomoDisplay();
+    }
+  });
+});
+
 // Init display
 pomoProgressEl.style.strokeDasharray = CIRCUMFERENCE;
+syncPomoMinuteDisplay();
 updatePomoDisplay();
 pomoSessionEl.textContent = pomoSessions;
 
@@ -784,7 +879,8 @@ document.getElementById('exportData').addEventListener('click', () => {
     todos: JSON.parse(localStorage.getItem('todos') || '[]'),
     notes: JSON.parse(localStorage.getItem('notes') || '[]'),
     settings: JSON.parse(localStorage.getItem('appSettings') || '{}'),
-    pomoSessions: Number(localStorage.getItem('pomoSessions') || '0')
+    pomoSessions: Number(localStorage.getItem('pomoSessions') || '0'),
+    pomoMinutes: JSON.parse(localStorage.getItem('pomoMinutes') || 'null')
   };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -829,6 +925,16 @@ document.getElementById('importFile').addEventListener('change', (e) => {
         pomoSessions = data.pomoSessions;
         localStorage.setItem('pomoSessions', pomoSessions);
         pomoSessionEl.textContent = pomoSessions;
+      }
+
+      // Import pomodoro custom times
+      if (data.pomoMinutes && typeof data.pomoMinutes === 'object') {
+        Object.assign(pomoMinutes, data.pomoMinutes);
+        localStorage.setItem('pomoMinutes', JSON.stringify(pomoMinutes));
+        syncPomoMinuteDisplay();
+        pomoTotal = POMO_DURATIONS[pomoMode];
+        pomoTime = pomoTotal;
+        updatePomoDisplay();
       }
 
       // Import notes

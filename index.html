@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Productivity Hub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237c5cfc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z'/><path d='m15 5 4 4'/></svg>" />
   <link id="googleFontLink" rel="stylesheet" href="" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -12,7 +13,7 @@
   <div class="app">
     <!-- Navigation -->
     <nav class="nav">
-      <div class="nav-brand">Productivity Hub</div>
+      <div class="nav-brand"><svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg> Productivity Hub</div>
       <div class="nav-tabs">
         <button class="nav-tab active" data-tab="clock">Clock</button>
         <button class="nav-tab" data-tab="pomodoro">Pomodoro</button>
@@ -46,6 +47,35 @@
           <button class="pomo-mode" data-mode="short">Short Break</button>
           <button class="pomo-mode" data-mode="long">Long Break</button>
         </div>
+
+        <!-- Custom time inputs -->
+        <div class="pomo-time-settings" id="pomoTimeSettings">
+          <div class="pomo-time-row">
+            <label>Focus</label>
+            <div class="pomo-time-input">
+              <button class="pomo-adj" data-target="work" data-dir="-1">&#8722;</button>
+              <span id="pomoWorkMin">25</span><span class="pomo-unit">min</span>
+              <button class="pomo-adj" data-target="work" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="pomo-time-row">
+            <label>Short</label>
+            <div class="pomo-time-input">
+              <button class="pomo-adj" data-target="short" data-dir="-1">&#8722;</button>
+              <span id="pomoShortMin">5</span><span class="pomo-unit">min</span>
+              <button class="pomo-adj" data-target="short" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="pomo-time-row">
+            <label>Long</label>
+            <div class="pomo-time-input">
+              <button class="pomo-adj" data-target="long" data-dir="-1">&#8722;</button>
+              <span id="pomoLongMin">15</span><span class="pomo-unit">min</span>
+              <button class="pomo-adj" data-target="long" data-dir="1">+</button>
+            </div>
+          </div>
+        </div>
+
         <div class="pomo-ring">
           <svg viewBox="0 0 200 200" class="pomo-svg">
             <circle cx="100" cy="100" r="90" class="pomo-track" />
