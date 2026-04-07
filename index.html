@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productivity Hub</title>
+  <link id="googleFontLink" rel="stylesheet" href="" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="paper-overlay" id="paperOverlay"></div>
+  <div class="app">
+    <!-- Navigation -->
+    <nav class="nav">
+      <div class="nav-brand">Productivity Hub</div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" data-tab="clock">Clock</button>
+        <button class="nav-tab" data-tab="pomodoro">Pomodoro</button>
+        <button class="nav-tab" data-tab="todos">Todos</button>
+        <button class="nav-tab" data-tab="notes">Notes</button>
+        <button class="nav-tab" data-tab="settings">Settings</button>
+      </div>
+    </nav>
+
+    <!-- Clock Panel -->
+    <section id="clock" class="panel active">
+      <div class="clock-container">
+        <div class="clock-time" id="clockTime">00:00:00</div>
+        <div class="clock-date" id="clockDate">Monday, January 1, 2026</div>
+        <div class="clock-analog" id="analogClock">
+          <div class="clock-face">
+            <div class="hand hour-hand" id="hourHand"></div>
+            <div class="hand minute-hand" id="minuteHand"></div>
+            <div class="hand second-hand" id="secondHand"></div>
+            <div class="clock-center"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pomodoro Panel -->
+    <section id="pomodoro" class="panel">
+      <div class="pomo-container">
+        <div class="pomo-mode-tabs">
+          <button class="pomo-mode active" data-mode="work">Focus</button>
+          <button class="pomo-mode" data-mode="short">Short Break</button>
+          <button class="pomo-mode" data-mode="long">Long Break</button>
+        </div>
+        <div class="pomo-ring">
+          <svg viewBox="0 0 200 200" class="pomo-svg">
+            <circle cx="100" cy="100" r="90" class="pomo-track" />
+            <circle cx="100" cy="100" r="90" class="pomo-progress" id="pomoProgress" />
+          </svg>
+          <div class="pomo-timer" id="pomoTimer">25:00</div>
+        </div>
+        <div class="pomo-controls">
+          <button class="btn btn-primary" id="pomoStartPause">Start</button>
+          <button class="btn btn-secondary" id="pomoReset">Reset</button>
+        </div>
+        <div class="pomo-sessions">
+          <span id="pomoSessionCount">0</span> sessions completed
+        </div>
+      </div>
+    </section>
+
+    <!-- Todos Panel -->
+    <section id="todos" class="panel">
+      <div class="todo-container">
+        <div class="todo-input-row">
+          <input type="text" id="todoInput" placeholder="What needs to be done?" />
+          <button class="btn btn-primary" id="todoAdd">Add</button>
+        </div>
+        <div class="todo-filters">
+          <button class="todo-filter active" data-filter="all">All</button>
+          <button class="todo-filter" data-filter="active">Active</button>
+          <button class="todo-filter" data-filter="completed">Done</button>
+        </div>
+        <ul class="todo-list" id="todoList"></ul>
+        <div class="todo-footer">
+          <span id="todoCount">0 items left</span>
+          <button class="btn btn-ghost" id="todoClearDone">Clear completed</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notes Panel -->
+    <section id="notes" class="panel">
+      <div class="notes-container">
+        <!-- Sidebar: note list -->
+        <div class="notes-sidebar">
+          <button class="btn btn-primary notes-new-btn" id="newNote">+ New Note</button>
+          <div class="notes-search">
+            <input type="text" id="noteSearch" placeholder="Search notes..." />
+          </div>
+          <ul class="notes-list" id="notesList"></ul>
+        </div>
+        <!-- Editor -->
+        <div class="notes-editor" id="notesEditor">
+          <div class="notes-empty-state" id="notesEmpty">
+            <div class="notes-empty-icon">&#128221;</div>
+            <p>Select a note or create a new one</p>
+          </div>
+          <div class="notes-edit-area" id="notesEditArea" style="display:none;">
+            <input type="text" class="notes-title-input" id="noteTitle" placeholder="Note title..." />
+            <textarea class="notes-body-input" id="noteBody" placeholder="Start writing..."></textarea>
+            <div class="notes-edit-footer">
+              <span class="notes-timestamp" id="noteTimestamp"></span>
+              <button class="btn btn-ghost notes-delete-btn" id="deleteNote">Delete Note</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings Panel -->
+    <section id="settings" class="panel">
+      <div class="settings-container">
+        <h2 class="settings-title">Customize Your App</h2>
+
+        <!-- Typography -->
+        <fieldset class="settings-group">
+          <legend>Typography</legend>
+          <div class="settings-row">
+            <label for="fontFamily">Font Family</label>
+            <select id="fontFamily">
+              <optgroup label="System Fonts">
+                <option value="'Segoe UI', system-ui, sans-serif">Segoe UI (Default)</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Courier New', monospace">Courier New</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="Arial, sans-serif">Arial</option>
+              </optgroup>
+              <optgroup label="Google Fonts">
+                <option value="'Inter', sans-serif" data-google="Inter">Inter</option>
+                <option value="'Fira Code', monospace" data-google="Fira+Code">Fira Code</option>
+                <option value="'Poppins', sans-serif" data-google="Poppins">Poppins</option>
+                <option value="'Playfair Display', serif" data-google="Playfair+Display">Playfair Display</option>
+                <option value="'Space Grotesk', sans-serif" data-google="Space+Grotesk">Space Grotesk</option>
+                <option value="'JetBrains Mono', monospace" data-google="JetBrains+Mono">JetBrains Mono</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="settings-row">
+            <label for="fontSize">Font Size: <span id="fontSizeValue">16</span>px</label>
+            <input type="range" id="fontSize" min="12" max="24" value="16" />
+          </div>
+        </fieldset>
+
+        <!-- Color Scheme -->
+        <fieldset class="settings-group">
+          <legend>Color Scheme</legend>
+          <div class="settings-row">
+            <label for="themePreset">Theme</label>
+            <select id="themePreset">
+              <option value="dark">Dark (Default)</option>
+              <option value="light">Light</option>
+              <option value="midnight">Midnight Blue</option>
+              <option value="forest">Forest</option>
+              <option value="sunset">Sunset</option>
+              <option value="ocean">Ocean</option>
+              <option value="custom">Custom...</option>
+            </select>
+          </div>
+          <div class="settings-row">
+            <label for="accentColor">Accent Color</label>
+            <input type="color" id="accentColor" value="#7c5cfc" />
+          </div>
+          <div class="settings-row">
+            <label for="bgColor">Background Color</label>
+            <input type="color" id="bgColor" value="#0f1117" />
+          </div>
+        </fieldset>
+
+        <!-- Background -->
+        <fieldset class="settings-group">
+          <legend>Background</legend>
+          <div class="settings-row">
+            <label for="bgMode">Background Mode</label>
+            <select id="bgMode">
+              <option value="solid">Solid Color</option>
+              <option value="gradient">Gradient</option>
+              <option value="image">Image</option>
+            </select>
+          </div>
+
+          <!-- Gradient sub-panel -->
+          <div id="gradientOptions" class="settings-sub" style="display:none;">
+            <div class="settings-row">
+              <label for="gradientPreset">Gradient Preset</label>
+              <select id="gradientPreset">
+                <option value="custom">Custom</option>
+                <option value="purple-haze">Purple Haze</option>
+                <option value="ocean-blue">Ocean Blue</option>
+                <option value="sunset-warm">Sunset Warm</option>
+                <option value="emerald">Emerald</option>
+                <option value="midnight-city">Midnight City</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <label>Custom Colors</label>
+              <div class="settings-color-pair">
+                <input type="color" id="gradColor1" value="#0f0c29" />
+                <span class="color-arrow">&#8594;</span>
+                <input type="color" id="gradColor2" value="#302b63" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Image sub-panel -->
+          <div id="imageOptions" class="settings-sub" style="display:none;">
+            <div class="settings-row">
+              <label for="bgImage">Upload Image</label>
+              <input type="file" id="bgImage" accept="image/*" />
+            </div>
+            <div id="bgImagePreview" class="settings-img-preview" style="display:none;"></div>
+            <button class="btn btn-ghost" id="clearBgImage" style="display:none;">Remove Image</button>
+          </div>
+        </fieldset>
+
+        <!-- Paper Pattern -->
+        <fieldset class="settings-group">
+          <legend>Paper Pattern</legend>
+          <div class="settings-row">
+            <label for="paperPattern">Pattern</label>
+            <select id="paperPattern">
+              <option value="none">None</option>
+              <option value="lined">Lined</option>
+              <option value="graph">Graph</option>
+            </select>
+          </div>
+          <div id="patternColorRow" class="settings-row" style="display:none;">
+            <label for="patternColor">Line Color</label>
+            <div class="settings-color-pair">
+              <input type="color" id="patternColor" value="#2e3345" />
+              <input type="range" id="patternOpacity" min="5" max="100" value="30" />
+              <span id="patternOpacityValue" class="opacity-label">30%</span>
+            </div>
+          </div>
+          <div id="patternSizeRow" class="settings-row" style="display:none;">
+            <label for="patternSize">Line Spacing</label>
+            <div class="settings-color-pair">
+              <input type="range" id="patternSize" min="16" max="64" value="28" />
+              <span id="patternSizeValue" class="opacity-label">28px</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Save / Load Progress -->
+        <fieldset class="settings-group">
+          <legend>Your Data</legend>
+          <p class="settings-hint">Export your todos, settings, and pomodoro stats to a file. Import it on any device to pick up where you left off.</p>
+          <div class="settings-btn-row">
+            <button class="btn btn-primary" id="exportData">Export Data</button>
+            <label class="btn btn-secondary import-label" for="importFile">Import Data</label>
+            <input type="file" id="importFile" accept=".json" style="display:none;" />
+          </div>
+          <div id="importStatus" class="settings-status" style="display:none;"></div>
+        </fieldset>
+
+        <button class="btn btn-secondary settings-reset" id="resetSettings">Reset All to Defaults</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
