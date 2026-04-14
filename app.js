@@ -89,15 +89,71 @@ function syncPomoMinuteDisplay() {
   document.getElementById('pomoLongMin').textContent = pomoMinutes.long;
 }
 
-// Bell sound using Web Audio API
+// ========================
+//    ALARM SOUNDS
+// ========================
+
+// Bird sound — cheerful chirps (default)
+function playBirdSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = ctx.currentTime;
+
+    function chirp(startTime, baseFreq, duration) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(baseFreq, startTime);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, startTime + duration * 0.3);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.9, startTime + duration * 0.7);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.3, startTime + duration);
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+      gain.gain.setValueAtTime(0.3, startTime + duration * 0.5);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+
+      // Add a harmonic for richness
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(baseFreq * 2, startTime);
+      osc2.frequency.exponentialRampToValueAtTime(baseFreq * 3, startTime + duration * 0.3);
+      osc2.frequency.exponentialRampToValueAtTime(baseFreq * 1.8, startTime + duration);
+      gain2.gain.setValueAtTime(0, startTime);
+      gain2.gain.linearRampToValueAtTime(0.1, startTime + 0.01);
+      gain2.gain.exponentialRampToValueAtTime(0.001, startTime + duration * 0.8);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(startTime);
+      osc2.stop(startTime + duration);
+    }
+
+    // Pattern: tweet-tweet ... tweet-tweet-tweet
+    chirp(t, 2200, 0.12);
+    chirp(t + 0.15, 2600, 0.10);
+    chirp(t + 0.45, 2400, 0.08);
+    chirp(t + 0.55, 2800, 0.10);
+    chirp(t + 0.68, 2300, 0.14);
+    // Second phrase
+    chirp(t + 1.1, 2500, 0.10);
+    chirp(t + 1.22, 2900, 0.08);
+    chirp(t + 1.5, 2200, 0.12);
+    chirp(t + 1.65, 2700, 0.10);
+    chirp(t + 1.78, 2400, 0.15);
+  } catch (_) {}
+}
+
+// Bell sound — classic bell strikes
 function playBellSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const t = ctx.currentTime;
 
-    // Strike 1 — main bell hit
     function strike(startTime) {
-      // Fundamental tone
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = 'sine';
@@ -110,7 +166,6 @@ function playBellSound() {
       osc1.start(startTime);
       osc1.stop(startTime + 2.0);
 
-      // Overtone 1
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = 'sine';
@@ -122,7 +177,6 @@ function playBellSound() {
       osc2.start(startTime);
       osc2.stop(startTime + 1.2);
 
-      // Overtone 2 (shimmer)
       const osc3 = ctx.createOscillator();
       const gain3 = ctx.createGain();
       osc3.type = 'sine';
@@ -134,7 +188,6 @@ function playBellSound() {
       osc3.start(startTime);
       osc3.stop(startTime + 0.8);
 
-      // Impact click
       const bufSize = ctx.sampleRate * 0.02;
       const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
       const data = noiseBuf.getChannelData(0);
@@ -155,11 +208,141 @@ function playBellSound() {
       noise.stop(startTime + 0.05);
     }
 
-    // Play 3 bell strikes
     strike(t);
     strike(t + 0.6);
     strike(t + 1.2);
   } catch (_) {}
+}
+
+// Chime sound — gentle wind chime tones
+function playChimeSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = ctx.currentTime;
+    const notes = [523, 659, 784, 1047, 784, 659];
+
+    notes.forEach((freq, i) => {
+      const startTime = t + i * 0.3;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 1.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 1.5);
+
+      // Soft shimmer overtone
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.value = freq * 2.01;
+      gain2.gain.setValueAtTime(0, startTime);
+      gain2.gain.linearRampToValueAtTime(0.06, startTime + 0.02);
+      gain2.gain.exponentialRampToValueAtTime(0.001, startTime + 1.0);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(startTime);
+      osc2.stop(startTime + 1.0);
+    });
+  } catch (_) {}
+}
+
+// Digital sound — retro digital alarm beeps
+function playDigitalSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = ctx.currentTime;
+
+    function beep(startTime, duration) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = 1000;
+      gain.gain.setValueAtTime(0.2, startTime);
+      gain.gain.setValueAtTime(0.2, startTime + duration - 0.01);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    // Pattern: beep-beep ... beep-beep ... beep-beep-beep
+    beep(t, 0.12);
+    beep(t + 0.2, 0.12);
+    beep(t + 0.6, 0.12);
+    beep(t + 0.8, 0.12);
+    beep(t + 1.2, 0.12);
+    beep(t + 1.35, 0.12);
+    beep(t + 1.5, 0.18);
+  } catch (_) {}
+}
+
+// Rain sound — soft white noise wash
+function playRainSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = ctx.currentTime;
+    const duration = 2.5;
+
+    const bufSize = ctx.sampleRate * duration;
+    const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.value = 4000;
+    bandpass.Q.value = 0.5;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.25, t + 0.3);
+    gain.gain.setValueAtTime(0.25, t + duration - 0.8);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+
+    noise.connect(bandpass);
+    bandpass.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start(t);
+    noise.stop(t + duration);
+
+    // Add gentle ping droplets
+    [0.2, 0.5, 0.9, 1.3, 1.7].forEach(offset => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(3000 + Math.random() * 2000, t + offset);
+      g.gain.setValueAtTime(0.08, t + offset);
+      g.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.15);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t + offset);
+      osc.stop(t + offset + 0.15);
+    });
+  } catch (_) {}
+}
+
+// Alarm sound dispatcher
+const ALARM_SOUNDS = {
+  bird: { label: 'Bird Chirps', play: playBirdSound },
+  bell: { label: 'Classic Bell', play: playBellSound },
+  chime: { label: 'Wind Chime', play: playChimeSound },
+  digital: { label: 'Digital Beep', play: playDigitalSound },
+  rain: { label: 'Gentle Rain', play: playRainSound }
+};
+
+function playAlarmSound() {
+  const soundKey = settings ? settings.alarmSound : 'bird';
+  const sound = ALARM_SOUNDS[soundKey] || ALARM_SOUNDS.bird;
+  sound.play();
 }
 
 function startPomo() {
@@ -183,7 +366,7 @@ function startPomo() {
         pomoSessionEl.textContent = pomoSessions;
         localStorage.setItem('pomoSessions', pomoSessions);
       }
-      playBellSound();
+      playAlarmSound();
     }
   }, 1000);
 }
@@ -497,6 +680,7 @@ const DEFAULT_SETTINGS = {
   accentColor: '#7c5cfc',
   bgColor: '#0f1117',
   bgMode: 'solid',
+  alarmSound: 'bird',
   gradientPreset: 'custom',
   gradColor1: '#0f0c29',
   gradColor2: '#302b63',
@@ -646,6 +830,9 @@ function syncFormToSettings(s) {
   document.getElementById('gradientPreset').value = s.gradientPreset;
   document.getElementById('gradColor1').value = s.gradColor1;
   document.getElementById('gradColor2').value = s.gradColor2;
+
+  // Alarm sound
+  document.getElementById('alarmSound').value = s.alarmSound || 'bird';
 
   // Toggle sub-panels
   document.getElementById('gradientOptions').style.display = s.bgMode === 'gradient' ? 'block' : 'none';
@@ -849,6 +1036,17 @@ document.getElementById('patternSize').addEventListener('input', () => {
   document.getElementById('patternSizeValue').textContent = settings.patternSize + 'px';
   saveSettings(settings);
   applySettings(settings);
+});
+
+// Alarm sound
+document.getElementById('alarmSound').addEventListener('change', () => {
+  settings.alarmSound = document.getElementById('alarmSound').value;
+  saveSettings(settings);
+});
+
+// Preview alarm sound
+document.getElementById('alarmPreview').addEventListener('click', () => {
+  playAlarmSound();
 });
 
 // Reset all
