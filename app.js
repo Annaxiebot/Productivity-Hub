@@ -93,10 +93,25 @@ function syncPomoMinuteDisplay() {
 //    ALARM SOUNDS
 // ========================
 
+// Shared AudioContext, created/resumed on a user gesture (Start click) so
+// Chrome keeps the audio session alive when the tab is backgrounded or
+// minimized. A context created fresh in a throttled background tab would
+// start suspended and the alarm would be silent.
+let sharedAudioCtx = null;
+function getAudioCtx() {
+  if (!sharedAudioCtx) {
+    sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume();
+  }
+  return sharedAudioCtx;
+}
+
 // Bird sound — cheerful chirps (default)
 function playBirdSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
     const t = ctx.currentTime;
 
     function chirp(startTime, baseFreq, duration) {
@@ -150,7 +165,7 @@ function playBirdSound() {
 // Bell sound — classic bell strikes
 function playBellSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
     const t = ctx.currentTime;
 
     function strike(startTime) {
@@ -217,7 +232,7 @@ function playBellSound() {
 // Chime sound — gentle wind chime tones
 function playChimeSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
     const t = ctx.currentTime;
     const notes = [523, 659, 784, 1047, 784, 659];
 
@@ -254,7 +269,7 @@ function playChimeSound() {
 // Digital sound — retro digital alarm beeps
 function playDigitalSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
     const t = ctx.currentTime;
 
     function beep(startTime, duration) {
@@ -285,7 +300,7 @@ function playDigitalSound() {
 // Rain sound — soft white noise wash
 function playRainSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
     const t = ctx.currentTime;
     const duration = 2.5;
 
@@ -345,35 +360,71 @@ function playAlarmSound() {
   sound.play();
 }
 
+// System notification so the alarm is noticed even when the browser
+// is minimized (background tabs throttle timers and may suspend audio)
+function requestNotifyPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function notifyTimerDone() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const msg = pomoMode === 'work'
+      ? 'Focus session complete! Time for a break. \u{1F389}'
+      : 'Break is over! Time to focus. \u{1F4DA}';
+    new Notification('Productivity Hub', { body: msg, tag: 'pomodoro-done' });
+  } catch (_) {}
+}
+
+// The countdown is computed from a wall-clock end time rather than by
+// decrementing once per tick. Background tabs throttle setInterval, so a
+// tick-based countdown stalls when the window is minimized; clock-based
+// timing stays accurate no matter how rarely the interval fires.
+let pomoEndTime = null;
+
+function finishPomo() {
+  clearInterval(pomoInterval);
+  pomoRunning = false;
+  pomoEndTime = null;
+  pomoStartBtn.textContent = 'Start';
+  if (pomoMode === 'work') {
+    pomoSessions++;
+    pomoSessionEl.textContent = pomoSessions;
+    localStorage.setItem('pomoSessions', pomoSessions);
+  }
+  playAlarmSound();
+  notifyTimerDone();
+}
+
 function startPomo() {
   if (pomoRunning) {
     clearInterval(pomoInterval);
     pomoRunning = false;
+    pomoEndTime = null;
     pomoStartBtn.textContent = 'Resume';
     return;
   }
+  // Unlock audio while we have a user gesture, and ask for notification
+  // permission so the alarm can reach a minimized browser
+  getAudioCtx();
+  requestNotifyPermission();
+
   pomoRunning = true;
   pomoStartBtn.textContent = 'Pause';
+  pomoEndTime = Date.now() + pomoTime * 1000;
   pomoInterval = setInterval(() => {
-    pomoTime--;
+    pomoTime = Math.max(0, Math.round((pomoEndTime - Date.now()) / 1000));
     updatePomoDisplay();
-    if (pomoTime <= 0) {
-      clearInterval(pomoInterval);
-      pomoRunning = false;
-      pomoStartBtn.textContent = 'Start';
-      if (pomoMode === 'work') {
-        pomoSessions++;
-        pomoSessionEl.textContent = pomoSessions;
-        localStorage.setItem('pomoSessions', pomoSessions);
-      }
-      playAlarmSound();
-    }
-  }, 1000);
+    if (pomoTime <= 0) finishPomo();
+  }, 250);
 }
 
 function resetPomo() {
   clearInterval(pomoInterval);
   pomoRunning = false;
+  pomoEndTime = null;
   pomoTime = pomoTotal;
   pomoStartBtn.textContent = 'Start';
   updatePomoDisplay();
