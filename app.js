@@ -680,6 +680,40 @@ noteSearchEl.addEventListener('input', () => {
   renderNotesList();
 });
 
+// Seed a reference note with Frank Zane's muscle-building rules (once;
+// deleting it won't bring it back)
+if (!localStorage.getItem('zaneNoteSeeded')) {
+  const now = Date.now();
+  notes.push({
+    id: now,
+    title: "Frank Zane's Muscle-Building Rules",
+    body: [
+      "Training principles from three-time Mr. Olympia Frank Zane:",
+      "",
+      "1. Aesthetics over mass — train for symmetry, proportion, and definition rather than chasing maximum size or weight on the bar.",
+      "",
+      "2. Perfect form and mind-muscle connection — chasing numbers is a distraction. Use moderate weights, control every rep, and feel the target muscle working.",
+      "",
+      "3. Pyramid your sets — increase the weight and decrease the reps across sets to build both size and strength safely.",
+      "",
+      "4. Train weak points first — hit lagging body parts at the start of the workout, when energy, strength, and focus are at their peak.",
+      "",
+      "5. Stretch between sets — stretch the muscle you're training between sets (e.g. a two-arm lat stretch after cable rows) to stay flexible and injury-free.",
+      "",
+      "6. Prioritize recovery — Zane's later cycle: train 3 days out of every 5 for three weeks, then 3 days out of 6 in the fourth week. Muscle grows when you rest.",
+      "",
+      "7. Set a concrete objective — every workout and training phase should have a clear, measurable goal to keep motivation high.",
+      "",
+      "Source: Men's Health UK — Frank Zane's muscle-building rules",
+      "https://www.menshealth.com/uk/building-muscle/train-smarter/a73332286/frank-zane-muscle-building-rules/"
+    ].join('\n'),
+    createdAt: now,
+    updatedAt: now
+  });
+  saveNotes();
+  localStorage.setItem('zaneNoteSeeded', '1');
+}
+
 renderNotesList();
 
 // ========================
